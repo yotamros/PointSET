@@ -168,11 +168,11 @@ public class KdTree {
      * A nearest neighbor in the set to p; null if set is empty
      */
     public Point2D nearest(Point2D point) {
+        Point2D nearest;
         if (root == null) {
             return null;
         }
-        Point2D candidate = root.point;
-        Point2D nearest = nearest(root, point, candidate);
+        nearest = nearest(root, point, root.point);
         return nearest;
     }
 
@@ -180,26 +180,36 @@ public class KdTree {
         if (node == null) {
             return candidate;
         }
-        if (node.isVert && point.x() >= node.point.x() || !node.isVert
-                && point.y() >= node.point.y()) {
-            if (point.distanceTo(node.point) < point.distanceTo(candidate)) {
-                candidate = node.point;
-            }
-            return nearest(node.rightTop, point, candidate);
-        } else {
-            if (point.distanceTo(node.point) < point.distanceTo(candidate)) {
-                candidate = node.point;
-            }
-            return nearest(node.leftBottom, point, candidate);
+        if (node == root) {
+            candidate = nearest(node.leftBottom, point, candidate);
+            candidate = nearest(node.rightTop, point, candidate);
         }
+        if (node.isVert) {
+            Point2D rectPointA = new Point2D(node.rect.xmax(), point.y());
+            Point2D rectPointB = new Point2D(node.rect.xmin(), point.y());
+            if (point.distanceTo(node.point) < point.distanceTo(rectPointA)
+                    || point.distanceTo(node.point) < point
+                            .distanceTo(rectPointB)) {
+                if (point.distanceTo(node.point) < point.distanceTo(candidate)) {
+                    candidate = node.point;
+                }
+                candidate = nearest(node.leftBottom, point, candidate);
+                candidate = nearest(node.rightTop, point, candidate);
+            }
+        } else {
+            Point2D rectPointA = new Point2D(point.x(), node.rect.ymin());
+            Point2D rectPointB = new Point2D(point.x(), node.rect.ymax());
+            if (point.distanceTo(node.point) < point.distanceTo(rectPointA)
+                    || point.distanceTo(node.point) < point
+                            .distanceTo(rectPointB)) {
+                if (point.distanceTo(node.point) < point.distanceTo(candidate)) {
+                    candidate = node.point;
+                }
+                candidate = nearest(node.leftBottom, point, candidate);
+                candidate = nearest(node.rightTop, point, candidate);
+            }
+        }
+        return candidate;
     }
 
-    public static void main(String[] args) {
-        KdTree kd = new KdTree();
-        Point2D p1 = new Point2D(.5, .5);
-        Point2D p2 = new Point2D(.2, .6);
-        kd.insert(p1);
-        kd.insert(p2);
-        kd.draw();
-    }
 }
